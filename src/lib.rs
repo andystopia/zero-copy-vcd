@@ -3,22 +3,20 @@ pub mod svg;
 use std::{
     borrow::Cow,
     collections::{HashMap, HashSet},
-    convert::{identity, Infallible},
-    str::FromStr,
+    convert::identity,
 };
 
 use ariadne::{sources, Color, Label, Report};
 use chumsky::{
-    container::Container,
-    error::RichPattern,
     extra,
     prelude::Rich,
-    primitive::{any, choice, end, just},
+    primitive::{any, choice, just},
     recursive::recursive,
-    span::{SimpleSpan, Span},
+    span::SimpleSpan,
     text::{self, newline, whitespace},
     Parser,
 };
+
 type Err<'s> = extra::Err<Rich<'s, char, SimpleSpan<usize>>>;
 
 pub fn take_until<'s>(
@@ -354,7 +352,7 @@ pub struct VarChange<'s> {
 pub fn parse_binary_vcd<'s>() -> impl Parser<'s, &'s str, VarChange<'s>, Err<'s>> {
     just("b")
         .ignore_then(
-            choice((just("0"), just("1"), just("x")))
+            choice((just("0"), just("1"), just("x"), just("U")))
                 .repeated()
                 .at_least(1)
                 .map_slice(identity),
@@ -370,7 +368,7 @@ pub fn parse_binary_vcd<'s>() -> impl Parser<'s, &'s str, VarChange<'s>, Err<'s>
 
 fn parse_bit_vcd<'s>() -> impl Parser<'s, &'s str, VarChange<'s>, Err<'s>> {
     any()
-        .filter(|v: &char| v.is_ascii_digit() || *v == 'x')
+        .filter(|v: &char| v.is_ascii_digit())
         .map_slice(identity)
         .then(
             any()
@@ -575,7 +573,7 @@ mod test {
                 .then_ignore(whitespace())
                 .then(parse_variable_changes())
                 .then_ignore(end()),
-            include_str!("../hexbench2.vcd"),
+            include_str!("../lightbench.vcd"),
         )
         .unwrap();
 
